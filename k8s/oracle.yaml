@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oracle
+  labels:
+    app: oracle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oracle
+  template:
+    metadata:
+      labels:
+        app: oracle
+    spec:
+      containers:
+      - name: oracle
+        image: nimbusx-oracle:latest # Assumes image is available in local registry
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7070
+        env:
+        - name: ORACLE_PORT
+          value: "7070"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle
+spec:
+  selector:
+    app: oracle
+  ports:
+    - protocol: TCP
+      port: 7070
+      targetPort: 7070

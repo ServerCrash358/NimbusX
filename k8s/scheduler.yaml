@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  labels:
+    app: scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: nimbusx-scheduler:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+        env:
+        - name: SCHEDULER_PORT
+          value: "9090"
+        - name: ORACLE_URL
+          value: "http://oracle:7070"
+        - name: RPC_URL
+          value: "http://hardhat:8545"
+        - name: MARKETPLACE_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: nimbusx-config
+              key: MARKETPLACE_ADDRESS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+spec:
+  selector:
+    app: scheduler
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090

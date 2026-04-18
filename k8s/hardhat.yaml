@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hardhat
+  labels:
+    app: hardhat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hardhat
+  template:
+    metadata:
+      labels:
+        app: hardhat
+    spec:
+      containers:
+      - name: hardhat
+        image: node:20-alpine
+        workingDir: /app
+        ports:
+        - containerPort: 8545
+        command: ["sh", "-c", "npm install && npx hardhat node"]
+        volumeMounts:
+        - name: project-source
+          mountPath: /app
+      volumes:
+      - name: project-source
+        hostPath:
+          path: /run/desktop/mnt/host/f/Projects/NimbusX # Adjust this for your local environment
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hardhat
+spec:
+  selector:
+    app: hardhat
+  ports:
+    - protocol: TCP
+      port: 8545
+      targetPort: 8545
