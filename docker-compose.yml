@@ -1,0 +1,87 @@
+version: "3.9"
+
+# NimbusX local development stack
+# Brings up all Windows-developer-owned services.
+# The Linux developer's node-agents connect to this stack via the shared network.
+
+networks:
+  nimbusx:
+    driver: bridge
+
+services:
+  # ── Price Oracle ──────────────────────────────────────────────────────────
+  oracle:
+    build:
+      context: .
+      dockerfile: oracle/Dockerfile
+    image: nimbusx-oracle:latest
+    container_name: nimbusx-oracle
+    networks:
+      - nimbusx
+    ports:
+      - "7070:7070"
+    environment:
+      ORACLE_PORT: "7070"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7070/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Scheduler ─────────────────────────────────────────────────────────────
+  scheduler:
+    build:
+      context: .
+      dockerfile: scheduler/Dockerfile
+    image: nimbusx-scheduler:latest
+    container_name: nimbusx-scheduler
+    networks:
+      - nimbusx
+    ports:
+      - "9090:9090"
+    environment:
+      SCHEDULER_PORT: "9090"
+      ORACLE_URL: "http://oracle:7070"
+    depends_on:
+      oracle:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/providers"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── API Gateway ───────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: nimbusx-api:latest
+    container_name: nimbusx-api
+    networks:
+      - nimbusx
+    ports:
+      - "8080:8080"
+    environment:
+      API_PORT: "8080"
+      SCHEDULER_URL: "http://scheduler:9090"
+    depends_on:
+      scheduler:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Hardhat Local Chain (for contract testing) ────────────────────────────
+  hardhat:
+    image: node:20-alpine
+    container_name: nimbusx-hardhat
+    networks:
+      - nimbusx
+    ports:
+      - "8545:8545"
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npx hardhat node"
+    restart: unless-stopped

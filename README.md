@@ -1,57 +1,144 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# NimbusX
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+A decentralized cloud cost optimization protocol that schedules container workloads across compute providers using blockchain escrow, priority-based scheduling, and real-time pricing oracles.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+---
 
-## Project Overview
+## Architecture
 
-This example project includes:
-
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
-
-## Usage
-
-### Running Tests
-
-To run all the tests in the project, execute the following command:
-
-```shell
-npx hardhat test
+```
+User
+  │
+  ▼
+API Gateway  (Go · port 8080)
+  │
+  ▼
+Scheduler    (Go · port 9090)
+  │
+  ├──► Price Oracle  (Go · port 7070)
+  │
+  ├──► Smart Contracts (Solidity / Hardhat)
+  │      ├── ProviderRegistry
+  │      ├── Marketplace
+  │      └── Escrow
+  │
+  └──► Node Agents  (Linux dev · Go)
+           │
+           ▼
+       Containers (Docker / K8s)
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+---
 
-```shell
-npx hardhat test solidity
+## Repository Structure
+
+```
+NimbusX/
+├── contracts/              # Solidity smart contracts
+│   ├── ProviderRegistry.sol
+│   ├── Marketplace.sol
+│   └── Escrow.sol
+├── scheduler/              # Go scheduler engine
+│   ├── main.go
+│   ├── scheduler.go
+│   ├── scoring.go
+│   ├── provider_manager.go
+│   └── types.go
+├── oracle/                 # Go price oracle service
+│   ├── main.go
+│   ├── oracle.go
+│   └── pricing.go
+├── api/                    # Go API gateway
+│   ├── main.go
+│   ├── handlers.go
+│   └── middleware.go
+├── ignition/modules/       # Hardhat Ignition deploy modules
+│   └── NimbusX.ts
+├── scripts/
+│   └── deploy.ts           # Manual deploy script
+├── test/
+│   ├── NimbusX.ts          # Contract integration tests
+│   └── integration_test.go # Go service integration tests
+├── docker-compose.yml      # Local multi-service stack
+├── go.mod
+└── hardhat.config.ts
+```
+
+---
+
+## Smart Contracts
+
+### ProviderRegistry
+Tracks compute providers on-chain. Providers register their CPU/memory/price and earn a reputation score (0–100) that affects scheduling priority.
+
+### Marketplace
+The job board. Clients post jobs with escrowed ETH; the off-chain scheduler assigns matching providers. Job lifecycle: `Open → Assigned → Running → Completed | Failed | Cancelled`.
+
+### Escrow
+Holds per-job ETH. Releases to provider on completion, refunds client on failure/cancellation. Only callable by the Marketplace contract.
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js ≥ 20
+- Go ≥ 1.21
+- `npx` / `npm`
+
+### Install dependencies
+```bash
+npm install
+```
+
+### Run contract tests
+```bash
 npx hardhat test mocha
 ```
 
-### Make a deployment to Sepolia
-
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+### Deploy to local simulated network
+```bash
+npx hardhat ignition deploy ignition/modules/NimbusX.ts
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
-
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
+### Deploy to Sepolia testnet
+```bash
 npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+npx hardhat keystore set SEPOLIA_RPC_URL
+npx hardhat ignition deploy ignition/modules/NimbusX.ts --network sepolia
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+### Run Go services locally
+```bash
+# API Gateway
+go run ./api
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+# Scheduler
+go run ./scheduler
+
+# Price Oracle
+go run ./oracle
 ```
+
+### Run full local stack
+```bash
+docker-compose up
+```
+
+---
+
+## Development Progress
+
+| Step | Component | Status |
+|------|-----------|--------|
+| 1 | Smart Contracts | ✅ Done |
+| 2 | Scheduler base | ⬜ |
+| 3 | Oracle service | ⬜ |
+| 4 | API Gateway | ⬜ |
+| 5 | Scoring algorithm | ⬜ |
+| 6 | Integration testing | ⬜ |
+
+---
+
+## License
+MIT
