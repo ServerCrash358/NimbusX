@@ -71,6 +71,20 @@ func (pm *ProviderManager) Get(id string) (*Provider, bool) {
 	return &copy, true
 }
 
+// GetCount returns the number of active providers.
+func (pm *ProviderManager) GetCount() int {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	count := 0
+	for _, p := range pm.providers {
+		if p.Active {
+			count++
+		}
+	}
+	return count
+}
+
 // UpdateReputation adjusts a provider's reputation score (clamped 0-100).
 func (pm *ProviderManager) UpdateReputation(id string, delta int) {
 	pm.mu.Lock()
