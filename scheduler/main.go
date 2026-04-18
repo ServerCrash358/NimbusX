@@ -22,7 +22,15 @@ func main() {
 	}
 
 	pm := NewProviderManager()
-	sc := NewScheduler(pm, oracleURL)
+
+	bcClient, err := NewBlockchainClient()
+	if err != nil {
+		log.Printf("[scheduler] WARNING: Blockchain integration disabled: %v", err)
+	} else {
+		log.Printf("[scheduler] Blockchain integration enabled")
+	}
+
+	sc := NewScheduler(pm, oracleURL, bcClient)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /jobs", sc.HandleSubmitJob)

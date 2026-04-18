@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY oracle/ ./oracle/
-RUN go build -o /oracle-bin ./oracle/
+RUN CGO_ENABLED=0 go build -o /oracle-bin ./oracle/
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM alpine:3.19

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,13 +18,15 @@ type Scheduler struct {
 	jobs      map[string]*Job
 	pm        *ProviderManager
 	oracleURL string
+	bcClient  *BlockchainClient
 }
 
-func NewScheduler(pm *ProviderManager, oracleURL string) *Scheduler {
+func NewScheduler(pm *ProviderManager, oracleURL string, bcClient *BlockchainClient) *Scheduler {
 	return &Scheduler{
 		jobs:      make(map[string]*Job),
 		pm:        pm,
 		oracleURL: oracleURL,
+		bcClient:  bcClient,
 	}
 }
 
@@ -85,6 +88,16 @@ func (s *Scheduler) assignBestProvider(job *Job) error {
 	job.Status = JobStatusAssigned
 	job.StartedAt = &now
 	s.mu.Unlock()
+
+	// Perform on-chain assignment if blockchain integration is enabled
+	if s.bcClient != nil && best.Address != "" {
+		// Use a background context as we don't want to block the HTTP response too long
+		go func() {
+			if err := s.bcClient.AssignJobOnChain(context.Background(), job.ID, best.Address); err != nil {
+				fmt.Printf("[scheduler] Error assigning job on-chain: %v\n", err)
+			}
+		}()
+	}
 
 	return nil
 }
