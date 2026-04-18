@@ -43,6 +43,10 @@ async function main() {
   await escrow.setMarketplace(marketplaceAddr);
   console.log("✅ Escrow wired to Marketplace");
 
+  // 5. Wire Registry → Marketplace
+  await registry.setMarketplace(marketplaceAddr);
+  console.log("✅ ProviderRegistry wired to Marketplace");
+
   console.log("\n── Deployment Summary ──────────────────────────");
   console.log(`Escrow:           ${escrowAddr}`);
   console.log(`ProviderRegistry: ${registryAddr}`);

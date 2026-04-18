@@ -15,6 +15,7 @@ contract ProviderRegistry {
     }
 
     address public owner;
+    address public marketplace;
     mapping(address => Provider) public providers;
     address[] public providerList;
 
@@ -34,6 +35,11 @@ contract ProviderRegistry {
 
     constructor() {
         owner = msg.sender;
+    }
+
+    /// @notice Set the authorized marketplace address
+    function setMarketplace(address _marketplace) external onlyOwner {
+        marketplace = _marketplace;
     }
 
     /// @notice Register as a compute provider
@@ -66,7 +72,8 @@ contract ProviderRegistry {
     }
 
     /// @notice Called by the Marketplace to adjust reputation
-    function updateReputation(address providerAddr, uint256 newScore) external onlyOwner {
+    function updateReputation(address providerAddr, uint256 newScore) external {
+        require(msg.sender == owner || msg.sender == marketplace, "Not authorized");
         require(newScore <= 100, "Score out of range");
         providers[providerAddr].reputation = newScore;
         emit ReputationUpdated(providerAddr, newScore);

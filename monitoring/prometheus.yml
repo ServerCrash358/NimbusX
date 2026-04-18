@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'nimbusx-scheduler'
+    static_configs:
+      - targets: ['scheduler:9090']
+
+  - job_name: 'nimbusx-nodes'
+    static_configs:
+      - targets: ['node-agent:9091']

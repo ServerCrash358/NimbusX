@@ -85,3 +85,30 @@ services:
       - .:/app
     command: sh -c "npm install && npx hardhat node"
     restart: unless-stopped
+
+  # ── Monitoring Stack ──────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nimbusx-prometheus
+    networks:
+      - nimbusx
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nimbusx-grafana
+    networks:
+      - nimbusx
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+

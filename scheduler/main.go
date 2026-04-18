@@ -37,6 +37,7 @@ func main() {
 	mux.HandleFunc("GET /providers", pm.HandleListProviders)
 	mux.HandleFunc("GET /jobs/{id}", sc.HandleGetJob)
 	mux.HandleFunc("POST /providers/register", pm.HandleRegisterProvider)
+	mux.HandleFunc("GET /metrics", sc.HandleMetrics)
 
 	srv := &http.Server{
 		Addr:         ":" + port,

@@ -32,6 +32,9 @@ describe("NimbusX Contracts", function () {
     // Wire escrow to marketplace
     await escrow.setMarketplace(await marketplace.getAddress());
 
+    // Wire registry to marketplace
+    await registry.setMarketplace(await marketplace.getAddress());
+
     return { escrow, registry, marketplace, owner, scheduler, provider, client };
   }
 
